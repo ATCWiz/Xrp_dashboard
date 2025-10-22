@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRP Monitoring Dashboard</title>
+    <title>XRP Consolidated Dashboard v1.5</title>
     <style>
         * {
             margin: 0;
@@ -13,9 +13,11 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #fff;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            line-height: 1.6;
             padding: 20px;
+            min-height: 100vh;
         }
 
         .container {
@@ -23,24 +25,25 @@
             margin: 0 auto;
         }
 
-        .header {
+        header {
             text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #4facfe;
             margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
         }
 
-        .header h1 {
-            font-size: 2.5em;
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .last-updated {
-            color: #a0d4ff;
-            font-size: 0.9em;
+            color: #a8dadc;
+            font-size: 0.9rem;
+            margin-top: 10px;
         }
 
         .grid {
@@ -51,343 +54,742 @@
         }
 
         .card {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.18);
-            transition: transform 0.3s ease;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
         }
 
-        .card-title {
-            font-size: 1.2em;
+        .card h2 {
+            color: #4facfe;
             margin-bottom: 15px;
-            color: #a0d4ff;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            padding-bottom: 10px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3 {
+            color: #00f2fe;
+            margin: 15px 0 10px 0;
+            font-size: 1.2rem;
         }
 
         .metric {
             display: flex;
             justify-content: space-between;
-            margin: 10px 0;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
         }
 
         .metric-label {
-            color: #ccc;
+            color: #a8dadc;
+            font-weight: 500;
         }
 
         .metric-value {
+            color: #ffffff;
             font-weight: bold;
-            color: #fff;
-        }
-
-        .price-big {
-            font-size: 3em;
-            font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
         }
 
         .positive {
-            color: #4ade80;
+            color: #2ecc71;
         }
 
         .negative {
-            color: #f87171;
+            color: #e74c3c;
         }
 
         .neutral {
-            color: #fbbf24;
+            color: #f39c12;
+        }
+
+        .price-big {
+            font-size: 3rem;
+            text-align: center;
+            margin: 20px 0;
+            color: #4facfe;
+            text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin: 5px 5px 5px 0;
+        }
+
+        .badge-success {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .badge-warning {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+            border: 1px solid #f39c12;
+        }
+
+        .badge-danger {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .badge-info {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            border: 1px solid #4facfe;
         }
 
         .progress-bar {
             width: 100%;
-            height: 20px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 10px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             overflow: hidden;
             margin: 10px 0;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
-            transition: width 0.3s ease;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            transition: width 0.5s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8em;
+            font-size: 0.85rem;
             font-weight: bold;
         }
 
-        .scenario-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .scenario-card {
-            background: rgba(255,255,255,0.1);
+        .trigger-item {
+            background: rgba(255, 255, 255, 0.03);
             padding: 15px;
             border-radius: 10px;
-            border-left: 4px solid;
+            margin: 10px 0;
+            border-left: 4px solid #4facfe;
         }
 
-        .scenario-conservative { border-left-color: #60a5fa; }
-        .scenario-moderate { border-left-color: #4ade80; }
-        .scenario-aggressive { border-left-color: #fbbf24; }
-        .scenario-bull { border-left-color: #f87171; }
-
-        .refresh-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            padding: 12px 30px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            margin: 20px auto;
-            display: block;
+        .milestone-list {
+            list-style: none;
+            padding-left: 0;
         }
 
-        .refresh-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: scale(1.05);
+        .milestone-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #a8dadc;
         }
 
-        .table {
+        .milestone-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .recommendation {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(0, 242, 254, 0.1));
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #4facfe;
+            margin: 20px 0;
+        }
+
+        .timeline-event {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #00f2fe;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #4facfe;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e74c3c;
+            margin: 20px 0;
+        }
+
+        .section-header {
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin: 30px 0 20px 0;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        table {
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
         }
 
-        .table th,
-        .table td {
+        th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .table th {
-            background: rgba(255,255,255,0.1);
-            font-weight: bold;
-            color: #a0d4ff;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
+        th {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
             font-weight: bold;
         }
 
-        .status-achieved { background: #22c55e; }
-        .status-critical { background: #f59e0b; }
-        .status-accelerating { background: #3b82f6; }
-        .status-pending { background: #6b7280; }
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .price-big {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📊 XRP Monitoring Dashboard</h1>
-            <p class="last-updated" id="lastUpdated">Loading...</p>
-            <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh Data</button>
-        </div>
+        <header>
+            <h1>📊 XRP Consolidated Dashboard</h1>
+            <div class="last-updated" id="lastUpdated">Loading...</div>
+            <p style="color: #a8dadc; margin-top: 10px; font-size: 0.9rem;">
+                Comprehensive price projection and trigger monitoring
+            </p>
+        </header>
 
-        <!-- Current Price Section -->
-        <div class="card">
-            <h2 class="card-title">💰 Current XRP Price</h2>
-            <div class="price-big" id="currentPrice">$0.00</div>
-            <div class="metric">
-                <span class="metric-label">24h Change:</span>
-                <span class="metric-value" id="priceChange24h">0%</span>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Market Cap:</span>
-                <span class="metric-value" id="marketCap">$0</span>
-            </div>
-            <div class="metric">
-                <span class="metric-label">24h Volume:</span>
-                <span class="metric-value" id="volume24h">$0</span>
-            </div>
-        </div>
-
-        <!-- Simulation Models -->
-        <div class="card">
-            <h2 class="card-title">🎲 Simulation Models (5-Year Median)</h2>
-            <div id="simulationModels"></div>
-        </div>
-
-        <!-- Scenario Projections -->
-        <div class="card" style="grid-column: 1 / -1;">
-            <h2 class="card-title">🎯 Scenario Projections (5-Year)</h2>
-            <div class="scenario-grid" id="scenarioGrid"></div>
-        </div>
-
-        <!-- Trigger Dashboard -->
-        <div class="card" style="grid-column: 1 / -1;">
-            <h2 class="card-title">🎪 Trigger Completion Status</h2>
-            <table class="table" id="triggerTable">
-                <thead>
-                    <tr>
-                        <th>Trigger</th>
-                        <th>Status</th>
-                        <th>Completion</th>
-                        <th>Impact</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <!-- Timeline -->
-        <div class="card" style="grid-column: 1 / -1;">
-            <h2 class="card-title">📅 Critical Timeline</h2>
-            <div id="timeline"></div>
+        <div id="content">
+            <div class="loading">⏳ Loading dashboard data...</div>
         </div>
     </div>
 
     <script>
+        // Configuration
+        const JSON_URL = 'xrp_consolidated_dashboard.json';
+
+        // Utility Functions
+        function formatNumber(num) {
+            if (num === null || num === undefined) return 'N/A';
+            if (typeof num === 'string') return num;
+
+            if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
+            if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1000) return '$' + (num / 1000).toFixed(2) + 'K';
+
+            return num.toFixed(2);
+        }
+
+        function formatPercent(num) {
+            if (num === null || num === undefined) return 'N/A';
+            const sign = num >= 0 ? '+' : '';
+            return sign + num.toFixed(2) + '%';
+        }
+
+        function getColorClass(value) {
+            if (value > 0) return 'positive';
+            if (value < 0) return 'negative';
+            return 'neutral';
+        }
+
+        function getBadgeClass(status) {
+            const statusLower = (status || '').toLowerCase();
+            if (statusLower.includes('complete') || statusLower.includes('achieved') || statusLower.includes('strong')) {
+                return 'badge-success';
+            }
+            if (statusLower.includes('warning') || statusLower.includes('pending') || statusLower.includes('moderate')) {
+                return 'badge-warning';
+            }
+            if (statusLower.includes('critical') || statusLower.includes('high') || statusLower.includes('extreme')) {
+                return 'badge-danger';
+            }
+            return 'badge-info';
+        }
+
+        // Load and Display Dashboard
         async function loadDashboard() {
             try {
-                const response = await fetch('xrp_consolidated_dashboard.json');
+                const response = await fetch(JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
 
-                // Update last updated time
-                document.getElementById('lastUpdated').textContent = 
-                    `Last Updated: ${new Date(data.metadata.last_updated).toLocaleString()}`;
-
-                // Update current price
-                const price = data.current_market_metrics.price_usd;
-                const change24h = data.current_market_metrics.price_change_24h_pct;
-                document.getElementById('currentPrice').textContent = `$${price.toFixed(4)}`;
-                document.getElementById('currentPrice').className = `price-big ${change24h >= 0 ? 'positive' : 'negative'}`;
-
-                const changeElem = document.getElementById('priceChange24h');
-                changeElem.textContent = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
-                changeElem.className = `metric-value ${change24h >= 0 ? 'positive' : 'negative'}`;
-
-                document.getElementById('marketCap').textContent = 
-                    `$${(data.current_market_metrics.market_cap_usd / 1e9).toFixed(2)}B`;
-                document.getElementById('volume24h').textContent = 
-                    `$${(data.current_market_metrics.volume_24h_usd / 1e9).toFixed(2)}B`;
-
-                // Update simulation models
-                const simDiv = document.getElementById('simulationModels');
-                simDiv.innerHTML = '';
-                for (const [key, model] of Object.entries(data.simulation_models)) {
-                    const median = model.quantiles_5_year.p50_median;
-                    simDiv.innerHTML += `
-                        <div class="metric">
-                            <span class="metric-label">${model.name}:</span>
-                            <span class="metric-value">$${median.toFixed(2)}</span>
-                        </div>
-                    `;
-                }
-
-                // Update scenarios
-                const scenarioGrid = document.getElementById('scenarioGrid');
-                scenarioGrid.innerHTML = '';
-                const scenarios = data.scenario_projections;
-                const scenarioClasses = {
-                    'conservative': 'scenario-conservative',
-                    'moderate': 'scenario-moderate',
-                    'aggressive': 'scenario-aggressive',
-                    'bull_dream': 'scenario-bull'
-                };
-
-                for (const [key, scenario] of Object.entries(scenarios)) {
-                    if (key === 'extreme_outlier') continue;
-                    scenarioGrid.innerHTML += `
-                        <div class="scenario-card ${scenarioClasses[key] || ''}">
-                            <h3>${key.replace('_', ' ').toUpperCase()}</h3>
-                            <p style="margin: 10px 0;">
-                                <strong>Probability:</strong> ${(scenario.probability * 100).toFixed(0)}%
-                            </p>
-                            <p style="font-size: 1.5em; margin: 10px 0;">
-                                <strong>$${scenario.price_targets['60_months']}</strong>
-                            </p>
-                            <p style="font-size: 0.9em; color: #ccc;">
-                                ${scenario.description}
-                            </p>
-                        </div>
-                    `;
-                }
-
-                // Update triggers
-                const triggerTable = document.getElementById('triggerTable').getElementsByTagName('tbody')[0];
-                triggerTable.innerHTML = '';
-
-                const statusClasses = {
-                    'ACHIEVED': 'status-achieved',
-                    'CRITICAL': 'status-critical',
-                    'ACCELERATING': 'status-accelerating'
-                };
-
-                for (const [key, trigger] of Object.entries(data.trigger_dashboard)) {
-                    const statusClass = Object.keys(statusClasses).find(s => 
-                        trigger.status.includes(s)) || 'status-pending';
-
-                    triggerTable.innerHTML += `
-                        <tr>
-                            <td>${trigger.trigger_name}</td>
-                            <td><span class="status-badge ${statusClass}">${trigger.status}</span></td>
-                            <td>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: ${trigger.completion_pct}%">
-                                        ${trigger.completion_pct}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${trigger.impact_on_price}</td>
-                        </tr>
-                    `;
-                }
-
-                // Update timeline
-                const timeline = document.getElementById('timeline');
-                timeline.innerHTML = '';
-                for (const [period, data] of Object.entries(data.timeline_roadmap)) {
-                    if (data.critical_events && data.critical_events.length > 0) {
-                        timeline.innerHTML += `
-                            <div style="margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                                <h3 style="color: #a0d4ff; margin-bottom: 10px;">${data.period}</h3>
-                                ${data.critical_events.map(event => `
-                                    <div class="metric">
-                                        <span class="metric-label">${event.date}: ${event.event}</span>
-                                        <span class="metric-value ${event.impact === 'CRITICAL' ? 'positive' : 'neutral'}">
-                                            ${event.probability ? (event.probability * 100).toFixed(0) + '%' : ''}
-                                        </span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `;
-                    }
-                }
-
+                renderDashboard(data);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                alert('Error loading dashboard data. Make sure xrp_consolidated_dashboard.json is in the same directory.');
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <h2>⚠️ Error Loading Dashboard</h2>
+                        <p>${error.message}</p>
+                        <p>Please ensure the JSON file is accessible and properly formatted.</p>
+                    </div>
+                `;
             }
         }
 
-        // Load dashboard on page load
-        loadDashboard();
+        function renderDashboard(data) {
+            const content = document.getElementById('content');
 
-        // Auto-refresh every 5 minutes
-        setInterval(loadDashboard, 5 * 60 * 1000);
+            // Update last updated timestamp
+            const lastUpdated = data.metadata?.last_updated || 'Unknown';
+            document.getElementById('lastUpdated').innerHTML = `
+                📅 Last Updated: ${lastUpdated} | Version: ${data.metadata?.version || 'N/A'}
+            `;
+
+            let html = '';
+
+            // Current Market Metrics Section
+            html += renderMarketMetrics(data.current_market_metrics);
+
+            // Key Insights Summary
+            html += renderKeyInsights(data.key_insights_summary);
+
+            // Trigger Dashboard
+            html += renderTriggerDashboard(data.trigger_dashboard);
+
+            // Investment Recommendations
+            html += renderInvestmentRecommendations(data.investment_recommendations);
+
+            // Risk Dashboard
+            html += renderRiskDashboard(data.risk_dashboard);
+
+            // Timeline Roadmap
+            html += renderTimelineRoadmap(data.timeline_roadmap);
+
+            // Price Scenarios
+            html += renderPriceScenarios(data.price_scenarios);
+
+            // New Developments
+            html += renderNewDevelopments(data);
+
+            content.innerHTML = html;
+        }
+
+        function renderMarketMetrics(metrics) {
+            if (!metrics) return '';
+
+            return `
+                <div class="section-header">💰 Current Market Metrics</div>
+                <div class="grid">
+                    <div class="card">
+                        <h2>💵 Price Overview</h2>
+                        <div class="price-big">$${metrics.price_usd?.toFixed(2) || 'N/A'}</div>
+                        <div class="metric">
+                            <span class="metric-label">24h Change</span>
+                            <span class="metric-value ${getColorClass(metrics.price_change_24h_pct)}">
+                                ${formatPercent(metrics.price_change_24h_pct)}
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">From ATH</span>
+                            <span class="metric-value ${getColorClass(metrics.distance_from_ath_pct)}">
+                                ${formatPercent(metrics.distance_from_ath_pct)}
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">YTD Performance</span>
+                            <span class="metric-value ${getColorClass(metrics.ytd_performance_pct)}">
+                                ${formatPercent(metrics.ytd_performance_pct)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>📊 Market Stats</h2>
+                        <div class="metric">
+                            <span class="metric-label">Market Cap</span>
+                            <span class="metric-value">${formatNumber(metrics.market_cap_usd)}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">24h Volume</span>
+                            <span class="metric-value">${formatNumber(metrics.volume_24h_usd)}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Circulating Supply</span>
+                            <span class="metric-value">${(metrics.circulating_supply / 1e9).toFixed(2)}B XRP</span>
+                        </div>
+                        ${metrics.recovery_from_crash_pct ? `
+                        <div class="metric">
+                            <span class="metric-label">Recovery from Crash</span>
+                            <span class="metric-value positive">${formatPercent(metrics.recovery_from_crash_pct)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="card">
+                        <h2>📈 Technical Indicators</h2>
+                        ${metrics.technical_indicators ? `
+                        <div class="metric">
+                            <span class="metric-label">RSI (14)</span>
+                            <span class="metric-value">${metrics.technical_indicators.rsi_14 || 'N/A'}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">MA 50</span>
+                            <span class="metric-value">$${metrics.technical_indicators.ma_50?.toFixed(2) || 'N/A'}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">MA 200</span>
+                            <span class="metric-value">$${metrics.technical_indicators.ma_200?.toFixed(2) || 'N/A'}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Trend</span>
+                            <span class="metric-value" style="font-size: 0.85rem;">${metrics.technical_indicators.trend || 'N/A'}</span>
+                        </div>
+                        ` : '<p>Technical data not available</p>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderKeyInsights(insights) {
+            if (!insights) return '';
+
+            return `
+                <div class="section-header">🔥 Key Insights Summary</div>
+                <div class="card">
+                    <div class="grid">
+                        <div>
+                            <h3>📊 Overall Assessment</h3>
+                            <p>${insights.overall_assessment || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <h3>🎯 Near-Term Catalyst</h3>
+                            <p>${insights.biggest_near_term_catalyst || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <h3>💎 Critical Highlights</h3>
+                    <ul class="milestone-list">
+                        ${insights.evernorth_significance ? `<li>${insights.evernorth_significance}</li>` : ''}
+                        ${insights.federal_reserve_milestone ? `<li>${insights.federal_reserve_milestone}</li>` : ''}
+                        ${insights.rlusd_milestone ? `<li>${insights.rlusd_milestone}</li>` : ''}
+                        ${insights.whale_behavior_reversal ? `<li>${insights.whale_behavior_reversal}</li>` : ''}
+                        ${insights.government_shutdown_update ? `<li>${insights.government_shutdown_update}</li>` : ''}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function renderTriggerDashboard(triggers) {
+            if (!triggers) return '';
+
+            let html = '<div class="section-header">🎯 Trigger Completion Dashboard</div><div class="grid">';
+
+            for (const [key, trigger] of Object.entries(triggers)) {
+                if (typeof trigger !== 'object') continue;
+
+                html += `
+                    <div class="card">
+                        <h2>${trigger.trigger_name || key}</h2>
+                        <span class="badge ${getBadgeClass(trigger.status)}">${trigger.status || 'Unknown'}</span>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${trigger.completion_pct || 0}%">
+                                ${trigger.completion_pct || 0}%
+                            </div>
+                        </div>
+
+                        <h3>Key Metrics</h3>
+                        ${renderObject(trigger.key_metrics)}
+
+                        ${trigger.milestones_completed?.length ? `
+                        <h3>✅ Completed</h3>
+                        <ul class="milestone-list">
+                            ${trigger.milestones_completed.slice(-3).map(m => `<li>${m}</li>`).join('')}
+                        </ul>
+                        ` : ''}
+
+                        ${trigger.milestones_pending?.length ? `
+                        <h3>⏳ Pending</h3>
+                        <ul style="list-style: none; padding-left: 0;">
+                            ${trigger.milestones_pending.slice(0, 3).map(m => `<li style="color: #a8dadc; padding: 5px 0;">▪ ${m}</li>`).join('')}
+                        </ul>
+                        ` : ''}
+
+                        ${trigger.last_updated ? `
+                        <p style="color: #666; font-size: 0.85rem; margin-top: 10px;">Updated: ${trigger.last_updated}</p>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderInvestmentRecommendations(recommendations) {
+            if (!recommendations) return '';
+
+            return `
+                <div class="section-header">💡 Investment Recommendations</div>
+                <div class="recommendation">
+                    <h2 style="color: #4facfe; margin-bottom: 15px;">
+                        ${recommendations.overall_stance || 'N/A'}
+                    </h2>
+                    <div class="grid">
+                        <div>
+                            <div class="metric">
+                                <span class="metric-label">Confidence Level</span>
+                                <span class="metric-value positive">${recommendations.confidence_level || 'N/A'}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Risk/Reward Profile</span>
+                                <span class="metric-value">${recommendations.risk_reward_profile || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>📊 Position Sizing</h3>
+                            ${renderObject(recommendations.position_sizing)}
+                        </div>
+                    </div>
+
+                    ${recommendations.current_market_context ? `
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                        <h3>📍 Market Context</h3>
+                        <p>${recommendations.current_market_context}</p>
+                    </div>
+                    ` : ''}
+
+                    ${recommendations.tactical_guidance_oct_2025 ? `
+                    <div style="margin-top: 20px;">
+                        <h3>🎯 Tactical Guidance</h3>
+                        ${renderObject(recommendations.tactical_guidance_oct_2025)}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderRiskDashboard(risks) {
+            if (!risks) return '';
+
+            return `
+                <div class="section-header">⚠️ Risk Dashboard</div>
+                <div class="grid">
+                    <div class="card">
+                        <h2>🟢 Upside Catalysts</h2>
+                        ${renderRiskItems(risks.upside_catalysts, true)}
+                    </div>
+                    <div class="card">
+                        <h2>🔴 Downside Risks</h2>
+                        ${renderRiskItems(risks.downside_risks, false)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRiskItems(items, isUpside) {
+            if (!items) return '<p>No data available</p>';
+
+            let html = '';
+            let count = 0;
+            for (const [key, item] of Object.entries(items)) {
+                if (count >= 5) break; // Show top 5
+                if (typeof item !== 'object') continue;
+
+                const probabilityColor = item.probability >= 0.7 ? 'positive' : 
+                                       item.probability >= 0.4 ? 'neutral' : 'negative';
+
+                html += `
+                    <div class="trigger-item">
+                        <h3 style="color: ${isUpside ? '#2ecc71' : '#e74c3c'}; margin-bottom: 10px;">
+                            ${item.description || key}
+                        </h3>
+                        <div class="metric">
+                            <span class="metric-label">Probability</span>
+                            <span class="metric-value ${probabilityColor}">
+                                ${item.probability ? (item.probability * 100).toFixed(0) + '%' : 'N/A'}
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">${isUpside ? 'Impact' : 'Severity'}</span>
+                            <span class="metric-value">${item.impact || item.severity || 'N/A'}</span>
+                        </div>
+                        ${item.current_status ? `
+                        <p style="color: #a8dadc; margin-top: 10px; font-size: 0.9rem;">
+                            ${item.current_status}
+                        </p>
+                        ` : ''}
+                    </div>
+                `;
+                count++;
+            }
+
+            return html || '<p>No items available</p>';
+        }
+
+        function renderTimelineRoadmap(timeline) {
+            if (!timeline) return '';
+
+            let html = '<div class="section-header">📅 Timeline Roadmap</div><div class="grid">';
+
+            for (const [key, period] of Object.entries(timeline)) {
+                if (typeof period !== 'object') continue;
+
+                html += `
+                    <div class="card">
+                        <h2>${period.period || key}</h2>
+                        ${period.expected_price_action ? `
+                        <div style="background: rgba(79,172,254,0.1); padding: 10px; border-radius: 8px; margin: 10px 0;">
+                            <strong style="color: #4facfe;">Expected Price Action:</strong>
+                            <p style="margin-top: 5px;">${period.expected_price_action}</p>
+                        </div>
+                        ` : ''}
+
+                        ${period.critical_events?.length ? `
+                        <h3>🎯 Critical Events</h3>
+                        ${period.critical_events.slice(0, 4).map(event => `
+                            <div class="timeline-event">
+                                <strong>${event.date || event.event}</strong>
+                                ${event.event && event.date ? `<p>${event.event}</p>` : ''}
+                                ${event.impact ? `<span class="badge ${getBadgeClass(event.impact)}">${event.impact}</span>` : ''}
+                                ${event.probability ? `<span style="color: #a8dadc; font-size: 0.85rem;">Prob: ${(event.probability * 100).toFixed(0)}%</span>` : ''}
+                            </div>
+                        `).join('')}
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderPriceScenarios(scenarios) {
+            if (!scenarios) return '';
+
+            let html = '<div class="section-header">🎲 Price Scenarios</div><div class="grid">';
+
+            for (const [key, scenario] of Object.entries(scenarios)) {
+                if (typeof scenario !== 'object') continue;
+
+                html += `
+                    <div class="card">
+                        <h2>${scenario.scenario_name || key}</h2>
+                        <span class="badge badge-info">
+                            Probability: ${scenario.probability ? (scenario.probability * 100).toFixed(0) + '%' : 'N/A'}
+                        </span>
+
+                        ${scenario.target_price_2025 || scenario.target_price_2026 ? `
+                        <h3>🎯 Price Targets</h3>
+                        ${scenario.target_price_2025 ? `<div class="metric">
+                            <span class="metric-label">2025</span>
+                            <span class="metric-value positive">${scenario.target_price_2025}</span>
+                        </div>` : ''}
+                        ${scenario.target_price_2026 ? `<div class="metric">
+                            <span class="metric-label">2026</span>
+                            <span class="metric-value positive">${scenario.target_price_2026}</span>
+                        </div>` : ''}
+                        ${scenario.target_price_2030 ? `<div class="metric">
+                            <span class="metric-label">2030</span>
+                            <span class="metric-value positive">${scenario.target_price_2030}</span>
+                        </div>` : ''}
+                        ` : ''}
+
+                        ${scenario.description ? `
+                        <p style="color: #a8dadc; margin-top: 15px;">${scenario.description}</p>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function renderNewDevelopments(data) {
+            let html = '';
+
+            // Check for new major developments
+            if (data.evernorth_xrp_treasury_spac) {
+                html += `
+                    <div class="section-header">🚀 Major New Developments</div>
+                    <div class="card">
+                        <h2>Evernorth $1B+ SPAC Deal</h2>
+                        <p>${data.evernorth_xrp_treasury_spac.announcement_date}</p>
+                        <span class="badge ${getBadgeClass(data.evernorth_xrp_treasury_spac.strategic_significance)}">
+                            ${data.evernorth_xrp_treasury_spac.strategic_significance}
+                        </span>
+                        ${renderObject(data.evernorth_xrp_treasury_spac.deal_structure)}
+                    </div>
+                `;
+            }
+
+            if (data.federal_reserve_faster_payments) {
+                html += `
+                    <div class="card">
+                        <h2>🏛️ Federal Reserve Integration</h2>
+                        <p>${data.federal_reserve_faster_payments.announcement_date}</p>
+                        <span class="badge ${getBadgeClass(data.federal_reserve_faster_payments.strategic_significance)}">
+                            ${data.federal_reserve_faster_payments.strategic_significance}
+                        </span>
+                        <p style="margin-top: 15px;">${data.federal_reserve_faster_payments.ripple_position?.significance || ''}</p>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        function renderObject(obj) {
+            if (!obj || typeof obj !== 'object') return '';
+
+            let html = '';
+            for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === 'object') continue; // Skip nested objects for simplicity
+
+                const label = key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase());
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">${label}</span>
+                        <span class="metric-value">${value}</span>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        // Initialize dashboard
+        loadDashboard();
     </script>
 </body>
 </html>
